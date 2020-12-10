@@ -9,7 +9,7 @@ API for Social Media Downloader (Node.js and Express).
 
 
 ### Install Node.js
-Go to [this url](https://nodejs.org/en/) and install the Node.js for your computer.
+Go to [this url](https://nodejs.org/en/) and install the Node.js on your computer.
 
 To check if you have Node.js installed, run this command in your terminal:
 ```sh
@@ -33,7 +33,7 @@ After that, run this command in your terminal:
 npm start
 ```
 
-The project will start with 2020 port.
+The project will start on 2020 port.
 
 ### Tutorial
 Every API url, should pass with x-www-form-urlencoded with key and value pair, Example:
