@@ -36,7 +36,7 @@ npm start
 The project will start on 2020 port.
 
 ### Tutorial
-Every API url, should pass with x-www-form-urlencoded with key and value pair, Example:
+Every API url, should pass with x-www-form-urlencoded with key and value pair (POST METHOD), Example:
 ```sh
 url : https://www.youtube.com/watch?v=qyCn3APagyU
 ```
