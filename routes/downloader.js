@@ -338,52 +338,52 @@ router.post('/facebook', async (req, res)=>{
 });
 
 
-router.post('/soundcloud', async (req, res)=>{
+// router.post('/soundcloud', async (req, res)=>{
 
-    let url = req.body.url;
+//     let url = req.body.url;
     
-    scdl.setClientID(SOUNDCLOUD_CLIENT_ID);
-    const dataSl = await scdl.getInfo(url); 
+//     scdl.setClientID(SOUNDCLOUD_CLIENT_ID);
+//     const dataSl = await scdl.getInfo(url); 
     
-    if(dataSl.hasOwnProperty('genre')){
+//     if(dataSl.hasOwnProperty('genre')){
 
-        let thumbnail = dataSl.artwork_url;
-        let description = dataSl.description;
-        let duration = dataSl.full_duration;
-        let genre = dataSl.genre;
-        let title = dataSl.title;
-        let username = dataSl.user.username;
-        let profilePic = dataSl.user.avatar_url;
-        let mimeType = dataSl.media.transcodings[1].format.mime_type; 
-        let quality = dataSl.media.transcodings[1].quality;
+//         let thumbnail = dataSl.artwork_url;
+//         let description = dataSl.description;
+//         let duration = dataSl.full_duration;
+//         let genre = dataSl.genre;
+//         let title = dataSl.title;
+//         let username = dataSl.user.username;
+//         let profilePic = dataSl.user.avatar_url;
+//         let mimeType = dataSl.media.transcodings[1].format.mime_type; 
+//         let quality = dataSl.media.transcodings[1].quality;
 
-        let mediaUrl = dataSl.media.transcodings[1].url; 
-        let urlGetDownload = mediaUrl+"?client_id="+SOUNDCLOUD_CLIENT_ID; 
+//         let mediaUrl = dataSl.media.transcodings[1].url; 
+//         let urlGetDownload = mediaUrl+"?client_id="+SOUNDCLOUD_CLIENT_ID; 
 
-        request.get(urlGetDownload, (err, response, body)=>{
-            if(err){
-                res.json({status: "error", details: err});
-                res.end();
-            }else{
+//         request.get(urlGetDownload, (err, response, body)=>{
+//             if(err){
+//                 res.json({status: "error", details: err});
+//                 res.end();
+//             }else{
 
-                let urlDownload = JSON.parse(body).url; 
-                res.json({status: "success", title: title, thumbnail: thumbnail, duration: duration, genre: genre, mimeType: mimeType, quality: quality, description: description, urlDownload: urlDownload, username: username, profilePic: profilePic});
-                res.end();
+//                 let urlDownload = JSON.parse(body).url; 
+//                 res.json({status: "success", title: title, thumbnail: thumbnail, duration: duration, genre: genre, mimeType: mimeType, quality: quality, description: description, urlDownload: urlDownload, username: username, profilePic: profilePic});
+//                 res.end();
 
-            }
-        });
+//             }
+//         });
 
-    }else{
-        res.json({status: "error", details: "Failed, Please check the URL."});
-        res.end();
-    }
+//     }else{
+//         res.json({status: "error", details: "Failed, Please check the URL."});
+//         res.end();
+//     }
 
     
  
  
  
 
-})
+// })
 
 
 router.post('/dailymotion', (req, res)=>{
