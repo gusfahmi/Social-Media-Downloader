@@ -1,0 +1,5 @@
+node_modules/
+.travis.yml
+.gitignore
+.DS_Store
+.Thumbs_DB

@@ -13,8 +13,7 @@
     "express": "^4.17.1",
     "nodemon": "^2.0.6",
     "request": "^2.88.2",
-    "scdl-core": "github:ducktrshessami/scdl-core",
-    "soundcloudr": "^1.1.0",
+    "scdl-core": "github:ducktrshessami/scdl-core", 
     "tiktok-scraper": "^1.4.4",
     "youtube-dl": "^3.0.2"
   }
