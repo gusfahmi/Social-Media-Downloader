@@ -1,11 +1,11 @@
 # Social-Media-Downloader
 API for Social Media Downloader (Node.js and Express). 
-1. Youtube Downloader.
-2. Youtube Playlist Downloader.
-3. TikTok Downloader.
-4. Facebook Video Downloader.
-5. Soundcloud Downloader.
-6. DailyMotion Downloader.
+1. Youtube Downloader. (/api/youtube)
+2. Youtube Playlist Downloader. (/api/youtube-playlist)
+3. TikTok Downloader. (/api/tiktok)
+4. Facebook Video Downloader. (/api/facebook)
+5. Soundcloud Downloader. (/api/soundcloud)
+6. DailyMotion Downloader. (/api/dailymotion)
 
 
 ### Install Node.js
