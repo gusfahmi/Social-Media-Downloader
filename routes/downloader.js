@@ -1,424 +1,506 @@
-const request = require('request');
-const router = require('express').Router();
-const youtubeDl = require('youtube-dl');  
-const tiktokScraper = require('tiktok-scraper'); 
-const scdl = require("scdl-core");
+const request = require('request')
+const router = require('express').Router()
+const youtubeDl = require('youtube-dl')  
+const tiktokScraper = require('tiktok-scraper') 
+const scdl = require("scdl-core")
 
-const SOUNDCLOUD_CLIENT_ID = 'q9cqHFmpYvwB8fPF05c3K0wLHLvK9ZMS'; 
+const SOUNDCLOUD_CLIENT_ID = 'q9cqHFmpYvwB8fPF05c3K0wLHLvK9ZMS' 
 
 function toSupportedFormat(url) {
     if (url.includes("list=")) {
-        var playlistId = url.substring(url.indexOf('list=') + 5);
-        return "https://www.youtube.com/playlist?list=" + playlistId;
+        const playlistId = url.substring(url.indexOf('list=') + 5)
+
+        return `https://www.youtube.com/playlist?list=${playlistId}`
     }
-    return url;
+
+    return url
 }
 
 
-router.post('/instagram', (req, res)=>{
-    let url_post = req.body.url;
-    let split_url = url_post.split('/');
-    let ig_code = split_url[4];
+router.post('/instagram', (req, res) => {
+    const url_post = req.body.url
+    const split_url = url_post.split('/')
+    const ig_code = split_url[4]
 
-    const url = "https://www.instagram.com/p/"+ig_code+"/?__a=1";
+    const url = `https://www.instagram.com/p/${ig_code}/?__a=1`
 
-    request.get(url, (err, response, body)=>{
- 
+    request.get(url, (err, response, body) => {
         if(err){
-            res.json({status: "error", details: "Error on getting response"});
-            res.end();
+            res.json({status: "error", details: "Error on getting response"})
+
+            res.end()
         }else{
-            let json = JSON.parse(body);
+            let json = JSON.parse(body)
     
             if(json.hasOwnProperty("graphql")){
+                const { shortcode_media } = json.graphql
 
-                let postType = json.graphql.shortcode_media.__typename;
-            
-                //GraphImage = single image post
-                if(postType === "GraphImage"){
+                const { __typename: postType } = shortcode_media
 
-                    let displayUrl = json.graphql.shortcode_media.display_url;
-                    let captionCheck = json.graphql.shortcode_media.edge_media_to_caption.edges;
-                    let caption;
-                    if(captionCheck.length == 1){
-                        caption = json.graphql.shortcode_media.edge_media_to_caption.edges[0].node.text;
-                    }else{
-                        caption = "";
-                    }
+                if(postType != 'GraphImage' && postType != 'GraphSidecar' && postType != 'GraphVideo') {
+                    res.json({status: "error", details: "No Post Type Found"})
+                } else {
+                    const {
+                        display_url: displayUrl,
+                        edge_media_to_caption
+                    } = shortcode_media
+                    
+                    const {edges: captionCheck} = edge_media_to_caption
 
-                    let owner = json.graphql.shortcode_media.owner.username;
-                    let is_verified = json.graphql.shortcode_media.owner.is_verified;
-                    let profile_pic = json.graphql.shortcode_media.owner.profile_pic_url;
-                    let full_name = json.graphql.shortcode_media.owner.full_name;
-                    let is_private = json.graphql.shortcode_media.owner.is_private;
-                    let total_media = json.graphql.shortcode_media.owner.edge_owner_to_timeline_media.count;
-        
-        
-                    let hashtags = caption.match(/#\w+/g);
+                    const caption = captionCheck.length == 1 ? captionCheck[0].node.text : ""
 
-                    let dataDownload = displayUrl;
+                    const {
+                        username: owner,
+                        is_verified,
+                        profile_pic_url: profile_pic,
+                        full_name,
+                        is_private,
+                        edge_owner_to_timeline_media
+                    } = shortcode_media.owner
 
-                    res.json({status: "success", postType: "SingleImage", displayUrl: displayUrl, caption: caption, owner: owner, is_verified: is_verified, profile_pic: profile_pic, full_name: full_name, is_private: is_private, total_media: total_media, hashtags: hashtags, dataDownload: dataDownload});
-                    res.end();
-
-                //GraphSidecar = multiple post
-                }else if(postType === "GraphSidecar"){
+                    const total_media = edge_owner_to_timeline_media.count
+                    const hashtags = caption.match(/#\w+/g)
+                    
+                    //GraphImage = single image post
+                    if(postType === "GraphImage") {
+                        const dataDownload = displayUrl
     
-                    let displayUrl = json.graphql.shortcode_media.display_url;
-                    let captionCheck = json.graphql.shortcode_media.edge_media_to_caption.edges;
-                    let caption, download_url;
-                    if(captionCheck.length == 1){
-                        caption = json.graphql.shortcode_media.edge_media_to_caption.edges[0].node.text;
-                    }else{
-                        caption = "";
-                    }
-
-                    let owner = json.graphql.shortcode_media.owner.username;
-                    let is_verified = json.graphql.shortcode_media.owner.is_verified;
-                    let profile_pic = json.graphql.shortcode_media.owner.profile_pic_url;
-                    let full_name = json.graphql.shortcode_media.owner.full_name;
-                    let is_private = json.graphql.shortcode_media.owner.is_private;
-                    let total_media = json.graphql.shortcode_media.owner.edge_owner_to_timeline_media.count;
-
-
-                    let hashtags = caption.match(/#\w+/g); 
-
-                    let dataDownload = [];
-                    let total_post = json.graphql.shortcode_media.edge_sidecar_to_children.edges.length;
-                    for(let i=0; i<total_post; i++){
-                        let is_video = json.graphql.shortcode_media.edge_sidecar_to_children.edges[i].node.is_video;
-                        let placeholder_url = json.graphql.shortcode_media.edge_sidecar_to_children.edges[i].node.display_url;
-                        if(is_video === false){
-                            download_url = json.graphql.shortcode_media.edge_sidecar_to_children.edges[i].node.display_url;
-                        }else{
-                            download_url = json.graphql.shortcode_media.edge_sidecar_to_children.edges[i].node.video_url;
+                        res.json({
+                            status: "success",
+                            postType: "SingleImage",
+                            displayUrl,
+                            caption,
+                            owner,
+                            is_verified,
+                            profile_pic,
+                            full_name,
+                            is_private,
+                            total_media,
+                            hashtags,
+                            dataDownload
+                        })
+    
+                        res.end()
+                    //GraphSidecar = multiple post
+                    } else if(postType === "GraphSidecar") {
+                        const dataDownload = []
+                        
+                        for(const post of shortcode_media.edge_sidecar_to_children.edges) {
+                            const { is_video, display_url, video_url } = post.node
+    
+                            const placeholder_url = !is_video ? display_url : video_url
+    
+                            dataDownload.push({
+                                is_video,
+                                placeholder_url
+                            })
                         }
-
-                        dataDownload.push({is_video: is_video, placeholder_url: placeholder_url, download_url: download_url});
-    
-                    }
-    
-                    res.json({status: "success", postType: "MultiplePost", displayUrl: displayUrl, caption: caption, owner: owner, is_verified: is_verified, profile_pic: profile_pic, full_name: full_name, is_private: is_private, total_media: total_media, hashtags: hashtags, dataDownload: dataDownload});
-                    res.end();
-
-                //GraphVideo = video post
-                }else if(postType === "GraphVideo"){
-    
-
-                    let displayUrl = json.graphql.shortcode_media.display_url;
-                    let captionCheck = json.graphql.shortcode_media.edge_media_to_caption.edges;
-                    let caption;
-                    if(captionCheck.length == 1){
-                        caption = json.graphql.shortcode_media.edge_media_to_caption.edges[0].node.text;
-                    }else{
-                        caption = "";
-                    }
-
-                    let owner = json.graphql.shortcode_media.owner.username;
-                    let is_verified = json.graphql.shortcode_media.owner.is_verified;
-                    let profile_pic = json.graphql.shortcode_media.owner.profile_pic_url;
-                    let full_name = json.graphql.shortcode_media.owner.full_name;
-                    let is_private = json.graphql.shortcode_media.owner.is_private;
-                    let total_media = json.graphql.shortcode_media.owner.edge_owner_to_timeline_media.count;
         
-        
-                    let hashtags = caption.match(/#\w+/g); 
-                    let dataDownload = json.graphql.shortcode_media.video_url;
-
-                    res.json({status: "success", postType: "SingleVideo", displayUrl: displayUrl, caption: caption, owner: owner, is_verified: is_verified, profile_pic: profile_pic, full_name: full_name, is_private: is_private, total_media: total_media, hashtags: hashtags, dataDownload: dataDownload});
-                    res.end();
-
-
-                }else{
-                    res.json({status: "error", details: "No Post Type Found"});
+                        res.json({
+                            status: "success",
+                            postType: "MultiplePost",
+                            displayUrl,
+                            caption,
+                            owner,
+                            is_verified,
+                            profile_pic,
+                            full_name,
+                            is_private,
+                            total_media,
+                            hashtags,
+                            dataDownload
+                        })
+    
+                        res.end()
+                    //GraphVideo = video post
+                    } else if(postType === "GraphVideo") {
+                        const dataDownload = shortcode_media.owner.videoUrl
+    
+                        res.json({
+                            status: "success",
+                            postType: "SingleVideo",
+                            displayUrl,
+                            caption,
+                            owner,
+                            is_verified,
+                            profile_pic,
+                            full_name,
+                            is_private,
+                            total_media,
+                            hashtags,
+                            dataDownload
+                        })
+                        
+                        res.end()
+                    }
                 }
+            } else{
+                res.json({status: "error", details: "URL Failed"})
 
-            }else{
-                res.json({status: "error", details: "URL Failed"});
-                res.end();
+                res.end()
             }
         }
-         
     })
-
-});
+})
 
 
 router.post('/youtube', (req, res)=>{
-    const url = req.body.url;
+    const { url } = req.body
 
     youtubeDl.getInfo(url, function(err, info) {
-        
         if (err){
-            res.json({status: "error", details: err});
-            res.end();
-        }else{
+            res.json({status: "error", details: err})
 
+            res.end()
+        } else {
             if(info.hasOwnProperty('uploader_url')){
-
-                let ownerUrl = info.uploader_url;
-                let ownerId = info.uploader_id;
-                let channelUrl = info.channel_url;
-                let uploader = info.uploader;
-
-                let totalViews = info.view_count;
-                let urlId = info.id; 
-
-                let thumbnail = info.thumbnail;
-                let description = info.description;
-                let filename = info._filename;
-                let duration = info.duration;
-                let title = info.fulltitle; 
-                let categories = info.categories;
+                const {
+                    uploader_url: ownerUrl,
+                    uploader_id: ownerId,
+                    channel_url: channelUrl,
+                    uploader,
+                    view_count: totalViews,
+                    id: urlId,
+                    thumbnail,
+                    description,
+                    _filename: filename,
+                    duration,
+                    fulltitle: title,
+                    categories,
+                    formats
+                } = info
  
-                let dataFormats = []; 
-                totalFormats = info.formats.length;
-                for(let i=0; i<totalFormats; i++){
+                const dataFormats = [] 
 
-                    let formatId = info.formats[i].format_id;
-                    let dataDownload = info.formats[i].url;
-                    let format = info.formats[i].format_note;
-                    let ext = info.formats[i].ext;
-                    let formatText = info.formats[i].format;
-                    let filesize = info.formats[i].filesize; 
+                for(const currentFormat of formats) {
+                    const { formatId, dataDownload, format, ext, formatText, filesize } = currentFormat
 
-                    dataFormats.push({formatId: formatId, dataDownload: dataDownload, format: format, ext: ext, formatText: formatText, filesize: filesize});
-
+                    dataFormats.push({
+                        formatId,
+                        dataDownload,
+                        format,
+                        ext,
+                        formatText,
+                        filesize
+                    })
                 }
 
-                res.json({status: "success", ownerUrl: ownerUrl, ownerId: ownerId, channelUrl: channelUrl, uploader: uploader, totalViews: totalViews, urlId: urlId, thumbnail: thumbnail, description: description, filename: filename, duration: duration, title: title, categories: categories, dataFormats: dataFormats});
-                res.end();
+                res.json({
+                    status: "success",
+                    ownerUrl,
+                    ownerId,
+                    channelUrl,
+                    uploader,
+                    totalViews,
+                    urlId,
+                    thumbnail,
+                    description,
+                    filename,
+                    duration,
+                    title,
+                    categories,
+                    dataFormats
+                })
 
-            }else{
-                res.json({status: "error", details: "Failed, Please check the URL!"});
-                res.end();
+                res.end()
+            } else{
+                res.json({status: "error", details: "Failed, Please check the URL!"})
+
+                res.end()
             }
- 
-
         }
-
     })
-
-});
+})
 
 
 router.post('/youtube-playlist', (req, res)=>{
-
-    const url = toSupportedFormat(req.body.url);
+    const url = toSupportedFormat(req.body.url)
 
     youtubeDl.getInfo(url, function(err, info) {
-        
         if (err){
-            res.json({status: "error", details: err});
-            res.end();
-        }else{ 
-            
-            let totalPlaylists = info.length;
-            
+            res.json({status: "error", details: err})
 
-            let dataDownloads= [];
-            for(let i=0; i<totalPlaylists; i++){
+            res.end()
+        } else { 
+            let dataDownloads = []
 
-                let ownerUrl = info[i].uploader_url;
-                let ownerId = info[i].uploader_id;
-                let channelUrl = info[i].channel_url;
-                let uploader = info[i].uploader;
-
-                let totalViews = info[i].view_count;
-                let urlId = info[i].id; 
-
-                let thumbnail = info[i].thumbnail;
-                let description = info[i].description;
-                let filename = info[i]._filename;
-                let duration = info[i].duration;
-                let title = info[i].fulltitle; 
-                let categories = info[i].categories;
+            for(const playlist of info) {
+                const {
+                    uploader_url: ownerUrl,
+                    uploader_id: ownerId,
+                    channel_url: channelUrl,
+                    uploader,
+                    view_count: totalViews,
+                    id: urlId,
+                    thumbnail,
+                    description,
+                    _filename: filename,
+                    duration,
+                    fulltitle: title,
+                    categories,
+                    formats
+                } = playlist
  
-                let dataFormats = []; 
-                totalFormats = info[i].formats.length;
-                for(let j=0; j<totalFormats; j++){
+                const dataFormats = [] 
 
-                    let formatId = info[i].formats[j].format_id;
-                    let dataDownload = info[i].formats[j].url;
-                    let format = info[i].formats[j].format_note;
-                    let ext = info[i].formats[j].ext;
-                    let formatText = info[i].formats[j].format;
-                    let filesize = info[i].formats[j].filesize; 
+                for(const currentFormat of formats) {
+                    const {
+                        format_id: formatId,
+                        url: dataDownload,
+                        format_note: format,
+                        ext,
+                        format: formatText,
+                        filesize
+                    } = currentFormat
 
-                    dataFormats.push({formatId: formatId, dataDownload: dataDownload, format: format, ext: ext, formatText: formatText, filesize: filesize});
-
+                    dataFormats.push({
+                        formatId,
+                        dataDownload,
+                        format,
+                        ext,
+                        formatText,
+                        filesize
+                    })
                 }
 
-                dataDownloads.push({ownerUrl: ownerUrl, ownerId: ownerId, channelUrl: channelUrl, uploader: uploader, totalViews: totalViews, urlId: urlId, thumbnail: thumbnail, description: description, filename: filename, duration: duration, title: title, categories: categories, dataFormats: dataFormats});
+                dataDownloads.push({
+                    ownerUrl,
+                    ownerId,
+                    channelUrl,
+                    uploader,
+                    totalViews,
+                    urlId,
+                    thumbnail,
+                    description,
+                    filename,
+                    duration,
+                    title,
+                    categories,
+                    dataFormats
+                })
                 
             }
 
-
-            res.json({status: "success", dataDownloads: dataDownloads});
-            res.end();
+            res.json({status: "success", dataDownloads: dataDownloads})
             
+            res.end()
         }
-
     })
-
-});
-
+})
 
 router.post('/tiktok', async (req, res)=>{
-    const url = req.body.url;
+    const url = req.body.url
 
     try{
-        const data = await tiktokScraper.getVideoMeta(url); 
+        const data = await tiktokScraper.getVideoMeta(url) 
 
         if(data.hasOwnProperty('headers')){
+            const { headers, collector } = data
 
-            let headers = data.headers;
-            let username = data.collector[0].authorMeta.name;
-            let name = data.collector[0].authorMeta.nickName;
-            let profilePic = data.collector[0].authorMeta.avatar;
+            const {
+                authorMeta,
+                text: description,
+                imageUrl: thumbnail,
+                videoUrl: urlDownload,
+                videoMeta
+            } = collector[0]
 
-            let description = data.collector[0].text;
+            const {
+                name: username,
+                nickName: name,
+                avatar: profilePic
+            } = authorMeta
 
-            let thumbnail = data.collector[0].imageUrl;
-            let urlDownload = data.collector[0].videoUrl;
+            const { ratio: format } = videoMeta
 
-            let format = data.collector[0].videoMeta.ratio;
+            res.json({
+                status: "success",
+                headers,
+                username,
+                name,
+                profilePic,
+                description,
+                thumbnail,
+                format,
+                urlDownload
+            })
 
-            res.json({status: "success", headers: headers, username: username, name: name, profilePic: profilePic, description: description, thumbnail: thumbnail, format: format, urlDownload: urlDownload});
-            res.end();
+            res.end()
+        } else {
+            res.json({status: "error", details: "Failed, Please check the URL!"})
 
-        }else{
-            res.json({status: "error", details: "Failed, Please check the URL!"});
-            res.end();
+            res.end()
         }
-        
-    }catch(err){
-        res.json({status: "error", details: err});
+    } catch(err) {
+        res.json({status: "error", details: err})
     }
-    
-
-});
+})
 
 
-router.post('/facebook', async (req, res)=>{
+router.post('/facebook', async (req, res) => {
+    const { url } = req.body 
 
-    const url = req.body.url; 
+    youtubeDl.getInfo(url, (err, info) => {
+        if (err) {
+            res.json({status: "error", details: err})
 
-    youtubeDl.getInfo(url, (err, info)=>{
-        if(err){
-            res.json({status: "error", details: err});
-            res.end();
-        }else{
+            res.end()
+        } else {
+            const {
+                _filename: filename,
+                thumbnails,
+                fulltitle: title
+            } = info
 
-            let filename = info._filename;
-            let thumbnail = info.thumbnails[0].url;
-            let title = info.fulltitle;   
+            const thumbnail = thumbnails[0].url
 
-            let dataDownloads = [];
-            let totalFormats = info.formats.length;
-            for(let i=0; i<totalFormats; i++){
-                
-                let formatNote = info.formats[i].format_note;
-                let extension = info.formats[i].ext;
-                let urlDownload = info.formats[i].url; 
+            const dataDownloads = []
+            
+            for(const currentFormat of info.formats) {
+                const {
+                    format_note: formatNote,
+                    ext: extension,
+                    url: urlDownload
+                } = currentFormat
 
-                dataDownloads.push({formatNote: formatNote, extension: extension, urlDownload: urlDownload});
+                dataDownloads.push({
+                    formatNote,
+                    extension,
+                    urlDownload
+                })
             }
 
-
-            res.json({status: "success", title: title, thumbnail: thumbnail, filename: filename, dataDownloads: dataDownloads});
-            res.end();
- 
-
+            res.json({
+                status: "success",
+                title,
+                thumbnail,
+                filename,
+                dataDownloads
+            })
+            
+            res.end()
         }
-         
-    });
- 
-    
-});
+    })
+})
 
 
 router.post('/soundcloud', async (req, res)=>{
-
-    let url = req.body.url;
+    const { url } = req.body
     
-    scdl.setClientID(SOUNDCLOUD_CLIENT_ID);
-    const dataSl = await scdl.getInfo(url); 
+    scdl.setClientID(SOUNDCLOUD_CLIENT_ID)
+
+    const dataSl = await scdl.getInfo(url) 
     
     if(dataSl.hasOwnProperty('genre')){
+        const {
+            artwork_url: thumbnail,
+            description,
+            full_duration: duration,
+            genre,
+            title,
+            user,
+            media
+        } = dataSl
+        
+        const {
+            username,
+            avatar_url: profilePic
+        } = user
 
-        let thumbnail = dataSl.artwork_url;
-        let description = dataSl.description;
-        let duration = dataSl.full_duration;
-        let genre = dataSl.genre;
-        let title = dataSl.title;
-        let username = dataSl.user.username;
-        let profilePic = dataSl.user.avatar_url;
-        let mimeType = dataSl.media.transcodings[1].format.mime_type; 
-        let quality = dataSl.media.transcodings[1].quality;
+        const {
+            format,
+            quality,
+            url: mediaUrl
+        } = media.transcodings[1]
 
-        let mediaUrl = dataSl.media.transcodings[1].url; 
-        let urlGetDownload = mediaUrl+"?client_id="+SOUNDCLOUD_CLIENT_ID; 
+        const {mime_type: mimeType} = format 
 
-        request.get(urlGetDownload, (err, response, body)=>{
+        const urlGetDownload = `${mediaUrl}?client_id=${SOUNDCLOUD_CLIENT_ID}` 
+
+        request.get(urlGetDownload, (err, response, body) => {
             if(err){
-                res.json({status: "error", details: err});
-                res.end();
-            }else{
+                res.json({
+                    status: "error",
+                    details: err
+                })
 
-                let urlDownload = JSON.parse(body).url; 
-                res.json({status: "success", title: title, thumbnail: thumbnail, duration: duration, genre: genre, mimeType: mimeType, quality: quality, description: description, urlDownload: urlDownload, username: username, profilePic: profilePic});
-                res.end();
+                res.end()
+            }else{
+                const {url: urlDownload} = JSON.parse(body)
+
+                res.json({
+                    status: "success",
+                    title,
+                    thumbnail,
+                    duration,
+                    genre,
+                    mimeType,
+                    quality,
+                    description,
+                    urlDownload,
+                    username,
+                    profilePic
+                })
+                
+                res.end()
 
             }
-        });
+        })
+    } else {
+        res.json({status: "error", details: "Failed, Please check the URL."})
 
-    }else{
-        res.json({status: "error", details: "Failed, Please check the URL."});
-        res.end();
+        res.end()
     }
-
-    
- 
- 
- 
-
 })
 
+router.post('/dailymotion', (req, res) => {
+    const { url } = req.body
 
-router.post('/dailymotion', (req, res)=>{
-    
-    let url= req.body.url;
-
-    youtubeDl.getInfo(url, (err, info)=>{
+    youtubeDl.getInfo(url, (err, info) => {
         if(err){
-            res.json({status: "error", details: err});
-            res.end();
-        }else{
+            res.json({
+                status: "error",
+                details: err
+            })
 
+            res.end()
+        } else {
             if(info.hasOwnProperty('_filename')){
+                const {
+                    _filename: filename,
+                    ext: extension,
+                    height: format,
+                    description,
+                    uploader,
+                    fulltitle: title,
+                    url: urlDownload,
+                    thumbnail
+                } = info
 
-                let filename = info._filename;
-                let extension = info.ext;
-                let format = info.height;
-                let description= info.description;
-                let uploader= info.uploader;
-                let title = info.fulltitle;
-                let urlDownload = info.url;
-                let thumbnail = info.thumbnail;
+                res.json({
+                    status: "success",
+                    filename,
+                    extension,
+                    format,
+                    description,
+                    uploader,
+                    title,
+                    thumbnail,
+                    urlDownload
+                })
 
-                res.json({status: "success", filename: filename, extension: extension, format: format, description: description, uploader: uploader, title: title, thumbnail: thumbnail, urlDownload: urlDownload})
-                res.end();
+                res.end()
+            } else {
+                res.json({
+                    status: "error",
+                    details: "Failed, Please check the URL!"
+                })
 
-            }else{
-                res.json({status: "error", details: "Failed, Please check the URL!"});
-                res.end();
+                res.end()
             }
-
         }
-    });
-
+    })
 })
 
  
-module.exports = router;
+module.exports = router
