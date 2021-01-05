@@ -1,0 +1,34 @@
+{
+  "name": "hh-mm-ss",
+  "version": "1.2.0",
+  "description": "Simple hh:mm:ss time formatting utility",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard & node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Goldob/hh-mm-ss.git"
+  },
+  "keywords": [
+    "time format",
+    "hours",
+    "minutes",
+    "seconds",
+    "miliseconds",
+    "hh:mm:ss"
+  ],
+  "author": "Adam Gotlib",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Goldob/hh-mm-ss/issues"
+  },
+  "homepage": "https://github.com/Goldob/hh-mm-ss#readme",
+  "devDependencies": {
+    "standard": "^7.1.2",
+    "tape": "^4.6.0"
+  },
+  "dependencies": {
+    "zero-fill": "^2.2.3"
+  }
+}
