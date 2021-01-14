@@ -7,4 +7,4 @@ const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use('/api', downloader);
 
-app.listen(3030);
+app.listen(process.env.PORT || 80);
