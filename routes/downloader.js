@@ -173,7 +173,11 @@ router.post('/youtube', (req, res)=>{
                 const dataFormats = [] 
 
                 for(const currentFormat of formats) {
-                    const { formatId, dataDownload, format, ext, formatText, filesize } = currentFormat
+                    const { formatId, dataDownload, format, ext, formatText, filesize, acodec } = currentFormat
+                    
+                    if(acodec === 'none'){
+                        continue;   
+                    }
 
                     dataFormats.push({
                         formatId,
@@ -250,8 +254,13 @@ router.post('/youtube-playlist', (req, res)=>{
                         format_note: format,
                         ext,
                         format: formatText,
-                        filesize
+                        filesize,
+                        acodec
                     } = currentFormat
+                    
+                    if(acodec === 'none'){
+                        continue;   
+                    }
 
                     dataFormats.push({
                         formatId,
