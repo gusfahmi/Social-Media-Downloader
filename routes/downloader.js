@@ -4,7 +4,7 @@ const youtubeDl = require('youtube-dl')
 const tiktokScraper = require('tiktok-scraper') 
 const scdl = require("scdl-core")
 
-const SOUNDCLOUD_CLIENT_ID = 'q9cqHFmpYvwB8fPF05c3K0wLHLvK9ZMS' 
+const SOUNDCLOUD_CLIENT_ID = 'PUT YOUR CLIENT ID HERE' 
 
 function toSupportedFormat(url) {
     if (url.includes("list=")) {
