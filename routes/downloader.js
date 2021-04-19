@@ -178,7 +178,7 @@ router.post("/youtube", (req, res) => {
 				for (const currentFormat of formats) {
 					const {
 						formatId,
-						dataDownload,
+						url: dataDownload,
 						format,
 						ext,
 						formatText,
@@ -191,11 +191,9 @@ router.post("/youtube", (req, res) => {
 					}
 
 					dataFormats.push({
-						formatId,
 						dataDownload,
 						format,
 						ext,
-						formatText,
 						filesize,
 					});
 				}
@@ -276,11 +274,9 @@ router.post("/youtube-playlist", (req, res) => {
 					}
 
 					dataFormats.push({
-						formatId,
 						dataDownload,
 						format,
 						ext,
-						formatText,
 						filesize,
 					});
 				}
