@@ -1,5 +1,5 @@
 {
-  "name": "Social Media Downloader, Created by Gusfahmi",
+  "name": "social-media-downloader-gusfahmi",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -13,8 +13,6 @@
     "express": "^4.17.1",
     "nodemon": "^2.0.6",
     "request": "^2.88.2",
-    "scdl-core": "github:ducktrshessami/scdl-core",
-    "soundcloudr": "^1.1.0",
     "tiktok-scraper": "^1.4.4",
     "youtube-dl": "^3.0.2"
   }

@@ -1,10 +1,10 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const downloader = require('./routes/downloader');
+const express = require("express");
+const bodyParser = require("body-parser");
+const downloader = require("./routes/downloader");
 
 const app = express();
 
-app.use(bodyParser.urlencoded({extended: true}));
-app.use('/api', downloader);
+app.use(express.urlencoded({ extended: true }));
+app.use("/api", downloader);
 
-app.listen('2020');
+app.listen(2020);
